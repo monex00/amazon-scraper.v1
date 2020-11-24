@@ -47,6 +47,7 @@ class AmazonProduct (object):
         self._product["TimeDeal"] = date
         self._product["Category"] = category
 
+
     def scrape_price(self):
         try:
             sale_price_box = self.productPage.find("div", {'id': product_page_constant.PRICE_BOX_ID})
