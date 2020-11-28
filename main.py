@@ -17,12 +17,12 @@ COLLECTION_NAME = "amazon_deals_pi"
 
 def main():
     while (True):
-        # delete_old_record()
-        for category in URL_TO_SCRAPE.keys():
-            records = category_page_scraper.runScraping(URL_TO_SCRAPE.get(category), category)
+        delete_old_record()
+        for category_name in URL_TO_SCRAPE.keys():
+            records = category_page_scraper.runScraping(URL_TO_SCRAPE.get(category_name), category_name)
             isScraping = lambda: records is None
-            while isScraping():
-                records = category_page_scraper.runScraping(URL_TO_SCRAPE.get(category), category)
+            while not isScraping():
+                records = category_page_scraper.runScraping(URL_TO_SCRAPE.get(category_name), category_name)
         time.sleep(60 * 60)
 
 

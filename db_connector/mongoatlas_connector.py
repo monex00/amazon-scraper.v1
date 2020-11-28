@@ -1,6 +1,4 @@
 import datetime
-import json
-import time
 from pymongo import MongoClient
 from bson import ObjectId
 
@@ -12,7 +10,7 @@ from bson import ObjectId
 class AtlasMongoDb:
     __instance = None
     __atlasmongoinstance = None
-
+    #creare metodo per modificare collection
     @staticmethod
     def get_initialize(connection_url, db_name, collection_name=""):
         if not AtlasMongoDb.__instance and not AtlasMongoDb.__atlasmongoinstance:
@@ -29,12 +27,6 @@ class AtlasMongoDb:
     def __str__(self):
         return "Connected at document  " + self.db_name + "  in collection  " + self.collection_name + "  at url" + self.connection_url
 
-    # @staticmethod
-    # def fill_records_formatted_dict(records):
-    #     print("Loading records at collection: " + AtlasMongoDb.collection_name)
-    #     if AtlasMongoDb.collection_name not in AtlasMongoDb.list_database_names():
-    #         AtlasMongoDb.create_collection(AtlasMongoDb.collection_name)
-    #     AtlasMongoDb[AtlasMongoDb.collection_name].insert_many(records)
 
     def fill_records_formatted_dict(self, records):
         print("Loading records at collection: " + AtlasMongoDb.__atlasmongoinstance.collection_name)
@@ -55,5 +47,3 @@ class AtlasMongoDb:
                 {"TimeDeal": {"$lt": datetime.datetime.now()}}):
             self.__instance[AtlasMongoDb.__atlasmongoinstance.collection_name].delete_many(doc)
         print("Old Record Deleted")
-
-

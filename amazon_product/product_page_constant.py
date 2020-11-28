@@ -10,7 +10,7 @@ TITLE_DIRECT_SPAN = 'product-title-word-break'
 """PRICE: """
 PRICE_BOX_ID = 'price'
 
-"""- SALE PRICE"""
+"""- NORMAL PRICE"""
 SALE_PRICE_CLASS_GENERAL = 'priceBlockStrikePriceString'
 SALE_PRICE_ID_OUR = 'priceblock_ourprice'
 SALE_PRICE_ID_GENERAL = 'priceblock_saleprice'

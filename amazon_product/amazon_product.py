@@ -1,12 +1,13 @@
 from bs4 import BeautifulSoup
-from amazon_product import product_page_constant
+from amazon_product.product_page_constant import *
+
+DOLLAR_CHAR = '€'
 # TODO:
 #  Data di temine offerta, è prime ? prodotti kindle e il prezzo che prende dai libri
 #
-class AmazonProduct (object):
+class AmazonProduct(object):
 
     def initialize(self):
-        """initialize the product dict by scraping info given in the init: init is compulsory"""
         try:
             self._product["Price"] = self.scrape_price()
             self._product["DealPrice"] = self.scrape_dealprice()
@@ -15,7 +16,7 @@ class AmazonProduct (object):
             self._product["Image"] = self.scrape_imageproduct()
             self._product["Rating"] = self.scrape_ratingproduct()
             self._product["NumberOfVote"] = self.scrape_numberofvote()
-            self._product["Asin"] = self.scrape_asin()
+            # self._product["Asin"] = self.scrape_asin()
             self._product["MerchantInfo"] = self.scrape_merchant_info()
             self._product["PercentageDeals"] = self.set_percentage_deals()
         except AttributeError:
@@ -25,7 +26,7 @@ class AmazonProduct (object):
     def __init__(self, soup: BeautifulSoup, specific_url, date, category):
         """as initialized load the data immediately"""
         super(AmazonProduct, self).__init__()
-        print( specific_url)
+        print("Product url : " + specific_url)
         self._product = {
             "Title": [],
             "Image": [],
@@ -46,31 +47,37 @@ class AmazonProduct (object):
         self._product["Url"] = specific_url
         self._product["TimeDeal"] = date
         self._product["Category"] = category
-
+        #il problema risiede nell'url che viene dato TODO: vedere asin ---> mercoledì fare aggiustare click con selenium, e vedere asin con problema legato al prices
+        self._product["Asin"] = self._find_asin(specific_url)
 
     def scrape_price(self):
-        try:
-            sale_price_box = self.productPage.find("div", {'id': product_page_constant.PRICE_BOX_ID})
-        except AttributeError:
-            print("Error loading SalePrice value")
-            raise AttributeError
-        try:
-            if sale_price_box.find('span', {'id': product_page_constant.SALE_PRICE_ID_OUR}) is not None:
-                sale_price = sale_price_box.find('span', {'id': product_page_constant.SALE_PRICE_ID_OUR}).text
-            elif sale_price_box.find('span', {'id': product_page_constant.SALE_PRICE_ID_GENERAL}) is not None:
-                sale_price = sale_price_box.find('span', {'id': product_page_constant.SALE_PRICE_ID_GENERAL}).text
-            elif sale_price_box.find('span', product_page_constant.SALE_PRICE_CLASS_GENERAL) is not None:
-                sale_price = sale_price_box.find('span', product_page_constant.SALE_PRICE_CLASS_GENERAL).text
-            else:
-                raise AttributeError
-        except AttributeError:
+        found = False
+        sale_price_box = self.productPage
+        # try:
+        #     sale_price_box = self.productPage.find("div", {'id': PRICE_BOX_ID})
+        # except AttributeError:
+        #     print("Error loading SalePrice value")
+        #     raise AttributeError
+        if DOLLAR_CHAR in str(sale_price_box.find('span', {'id': SALE_PRICE_ID_OUR}).text):
+            found = True
+            price = sale_price_box.find('span', {'id': SALE_PRICE_ID_OUR}).text
+        if DOLLAR_CHAR in str(sale_price_box.find('span', {'id': SALE_PRICE_ID_GENERAL}).text):
+            found = True
+            price = sale_price_box.find('span', {'id': SALE_PRICE_ID_GENERAL}).text
+        if DOLLAR_CHAR in str(sale_price_box.find('span', {'class': SALE_PRICE_CLASS_GENERAL}).text):
+            found = True
+            price = sale_price_box.find('span', {'class': SALE_PRICE_CLASS_GENERAL}).text
+
+        if not found:
             print("Error during SALE PRICE scraping")
+            print(sale_price_box.find('span', {'class': SALE_PRICE_CLASS_GENERAL}).text)
             raise AttributeError
-        return sale_price
+        return price
 
     def scrape_dealprice(self):
         try:
-            deal_price = self.productPage.find('span', {'id': product_page_constant.DEAL_PRICE_SPAN}).text
+            print("deal price:  "+self.productPage.find('span', {'id': DEAL_PRICE_SPAN}).text)
+            deal_price = self.productPage.find('span', {'id': DEAL_PRICE_SPAN}).text
             deal_price = deal_price.strip()
             if '.' in deal_price:
                 deal_price = deal_price.remove('.')
@@ -82,11 +89,10 @@ class AmazonProduct (object):
             deal_price = "Deal price not found"
             return deal_price
 
-
     def scrape_dealoffertvalue(self):
         try:
-            offert_box = self.productPage.find('tr', {'id': product_page_constant.DEAL_OFFERT_TR_ID})
-            offert_value = offert_box.find('td', product_page_constant.DEAL_OFFERT_TD_CLASS).text
+            offert_box = self.productPage.find('tr', {'id': DEAL_OFFERT_TR_ID})
+            offert_value = offert_box.find('td', DEAL_OFFERT_TD_CLASS).text
         except AttributeError:
             print("Error during DEAL OFFERT VALUE scraping")
             offert_value = 'NOT FOUND'
@@ -94,7 +100,7 @@ class AmazonProduct (object):
 
     def scrape_titleproduct(self):
         try:
-            title = self.productPage.find('span', product_page_constant.TITLE_DIRECT_SPAN).text
+            title = self.productPage.find('span', TITLE_DIRECT_SPAN).text
         except AttributeError:
             print("Error loading title value")
             raise AttributeError
@@ -102,10 +108,11 @@ class AmazonProduct (object):
 
     def scrape_imageproduct(self):
         try:
-            image_container = self.productPage.find('div', product_page_constant.IMAGE_BOX_DIV)
+            image_container = self.productPage.find('div', IMAGE_BOX_DIV)
             image_finded = image_container.find('img')
             image_product = image_finded['src']
-            if len(image_product)>2048:
+            if len(image_product) > 2048:
+                print("Image product len > 2048")
                 raise AttributeError
         except AttributeError:
             print("Error loading Image value")
@@ -114,8 +121,8 @@ class AmazonProduct (object):
 
     def scrape_ratingproduct(self):
         try:
-            rating = self.productPage.find('div', {'id': product_page_constant.RATING_DIV_ID})
-            rating = rating.find('span', product_page_constant.RATING_STARS_SPAN).text
+            rating = self.productPage.find('div', {'id': RATING_DIV_ID})
+            rating = rating.find('span', RATING_STARS_SPAN).text
         except AttributeError:
             print("Error loading rating")
             rating = "NOT FOUND"
@@ -123,30 +130,36 @@ class AmazonProduct (object):
 
     def scrape_numberofvote(self):
         try:
-            number_of_vote = self.productPage.find('span', {'id': product_page_constant.NUMBEROFVOTE_SPAN_ID}).text
+            number_of_vote = self.productPage.find('span', {'id': NUMBEROFVOTE_SPAN_ID}).text
         except AttributeError:
             print("Error loading numberOfVote")
-            number_of_vote= "NOTE FOUND"
+            number_of_vote = "NOTE FOUND"
         return number_of_vote
 
-    def scrape_asin(self):
-        try:
-            asinbox = self.productPage.find('div', {'id': product_page_constant.ASIN_BOX_DIV_ID})
-            if asinbox is None:
-                raise AttributeError
-            asin = asinbox['data-asin']
-        except AttributeError:
-            print("Error during ASIN scraping")
-            raise AttributeError
-        return asin
+    def _find_asin(self, url):
+        if '/dp/' in url:
+            return url.split('/dp/')[1].split('/')[0]
+        else:
+            print("ASIN NOT FOUND")
+    # def scrape_asin(self):
+    #     try:
+    #         asinbox = self.productPage.find('div', {'id': ASIN_BOX_DIV_ID})
+    #         if asinbox is None:
+    #             print("Error loading asinbox is NONE")
+    #             raise AttributeError
+    #         asin = asinbox['data-asin']
+    #     except AttributeError:
+    #         print("Error during ASIN scraping")
+    #         raise AttributeError
+    #     return asin
 
     def scrape_merchant_info(self):
         """Scrape the information of the seller and prepare the string for discord"""
         try:
-            mechant_info = self.productPage.find('div', {'id': product_page_constant.MERCHANTINFO_DIV_ID})
-            seller = mechant_info.find('a', {'id': product_page_constant.SELLER_A_ID}).text
-            spedition_handler = mechant_info.find('a', {'id': product_page_constant.SPEDITIONHANDLER_A_ID}).text
-            seller_url = mechant_info.find('a', {'id': product_page_constant.SELLER_A_ID})['href']
+            mechant_info = self.productPage.find('div', {'id': MERCHANTINFO_DIV_ID})
+            seller = mechant_info.find('a', {'id': SELLER_A_ID}).text
+            spedition_handler = mechant_info.find('a', {'id': SPEDITIONHANDLER_A_ID}).text
+            seller_url = mechant_info.find('a', {'id': SELLER_A_ID})['href']
             string_to_eliminate_first = '/gp/help/seller/at-a-glance.html/ref=dp_merchant_link?ie=UTF8&seller='
             string_to_eliminate_second = '&isAmazonFulfilled=1'
             seller_url = seller_url.replace(string_to_eliminate_first, "")
@@ -164,7 +177,7 @@ class AmazonProduct (object):
     def set_percentage_deals(self):
         if 'NOT FOUND' not in self._product["OffertValue"]:
             percentage = self._product["OffertValue"]
-            percentage = percentage.remove('\n')
+            percentage.remove('\n')
             percentage = percentage.split(' ')
             print(percentage)
             percentage = percentage[2]

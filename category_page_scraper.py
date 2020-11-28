@@ -3,7 +3,10 @@ import time
 from amazon_product import amazon_product
 from bs4 import BeautifulSoup
 from selenium import webdriver
-
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
 from db_connector import mongoatlas_connector
 
 driver = webdriver.Firefox(
@@ -12,8 +15,8 @@ URL_MONGO_ATALS = "mongodb+srv://singh:K7nhMHqTfUSt7IDN@cluster0.bgnl4.mongodb.n
 DOCUMENT_NAME = "sconti"
 COLLECTION_NAME = "amazon_deals_pi"
 
+
 def get_url(url, page):
-    template = url
     template = url.replace('{}', str(page))
     print(" Scraping: " + template)
     return template
@@ -39,7 +42,6 @@ def extract_singleCellItem(item, category):
 
     try:
         record = get_product_data(url, time, category)
-
     except AttributeError:
         print("Error LOADING ITEM")
         raise AttributeError
@@ -53,6 +55,7 @@ def main(urlInit, category):
         url = get_url(urlInit, page)
 
         driver.get(url)
+        driver.maximize_window()
         time.sleep(0.75)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         results = soup.find_all('div', {'class': 'singleCell'})
@@ -79,6 +82,7 @@ def main(urlInit, category):
 
 def get_product_data(specificUrl, date, category):
     driver.get(specificUrl)
+    driver.maximize_window()
     time.sleep(0.5)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     prodct = amazon_product.AmazonProduct(soup, specificUrl, date, category)
